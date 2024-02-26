@@ -46,7 +46,7 @@ public:
         tagpower = power2tox(tagSize);
         histpower = power2tox(historySize);
     }
-    virtual ~BTB() = 0;
+    ~BTB() = default;
     virtual bool  predict(uint32_t pc, uint32_t *dst) =0;
     virtual void  update(uint32_t pc, uint32_t targetPc, bool taken, uint32_t pred_dst) = 0;
     virtual void  BP_GetStats(SIM_stats *curStats) = 0;
@@ -61,7 +61,7 @@ public:
     BTB_GT_GH(unsigned btbSize, unsigned historySize, unsigned tagSize, unsigned fsmState, int isShare) :
     BTB(btbSize, historySize, tagSize, fsmState),globaltable(histpower,fsmState), shared(isShare), history(0) {}
 
-    ~BTB_GT_GH() override{}
+    ~BTB_GT_GH() = default;
 
     uint32_t  sharetype(uint32_t pc1, int shared){
         if (shared==0){
@@ -148,7 +148,7 @@ public:
     BTB_LT_GH(unsigned btbSize, unsigned historySize, unsigned tagSize, unsigned fsmState) :
     BTB(btbSize, historySize, tagSize, fsmState), localtables(btbSize, std::vector<unsigned>(histpower, fsmState)),history(0) {}
 
-    ~BTB_LT_GH() override{}
+    ~BTB_LT_GH() = default;
 
     bool  predict(uint32_t pc, uint32_t *dst) override {
         uint32_t indexintag=(pc/4)%btbSize;
@@ -223,7 +223,7 @@ public:
     BTB_GT_LH(unsigned btbSize, unsigned historySize, unsigned tagSize, unsigned fsmState,int isShare) :
     BTB(btbSize, historySize, tagSize, fsmState),globaltable(histpower,fsmState),shared(isShare),historyvec(btbSize,0){}
 
-    ~BTB_GT_LH() override{}
+    ~BTB_GT_LH() =default;
 
     uint32_t  sharetype1(uint32_t pc1, int shared,uint32_t indexintag){
         if (shared==0){
@@ -313,7 +313,7 @@ public:
     BTB_LT_LH(unsigned btbSize, unsigned historySize, unsigned tagSize, unsigned fsmState) :
     BTB(btbSize, historySize, tagSize, fsmState), localtables(btbSize, std::vector<unsigned>(histpower, fsmState)),historyvec(btbSize,0) {}
 
-    ~BTB_LT_LH() override{}
+    ~BTB_LT_LH() = default;
 
     bool  predict(uint32_t pc, uint32_t *dst) override {
         uint32_t indexintag=(pc/4)%btbSize;
