@@ -77,10 +77,10 @@ public:
     }
 
     bool  predict(uint32_t pc, uint32_t *dst) override {
-        uint32_t indexintag=(pc/4)%btbSize;
+        uint32_t myindex=(pc/4)%btbSize;
         uint32_t mytag=((pc/bitstotagpower)%tagpower);
         uint32_t indexingt = sharetype(pc,shared);
-        if (tag[indexintag]!=mytag || !valid[indexintag]){
+        if (tag[myindex]!=mytag || !valid[myindex]){
             *dst=pc+4;
             return false;
         }
@@ -88,19 +88,19 @@ public:
             *dst=pc+4;
             return false;
         }
-        *dst=targetpc[indexintag];
+        *dst=targetpc[myindex];
         return true;
     }
 
     void  update(uint32_t pc, uint32_t targetPc, bool taken, uint32_t pred_dst) override {
-        uint32_t indexintag=(pc/4)%btbSize;
+        uint32_t myindex=(pc/4)%btbSize;
         uint32_t mytag=((pc/bitstotagpower)%tagpower);
         mystats.br_num++;
         uint32_t indexingt = sharetype(pc,shared);
-        if (!valid[indexintag] || tag[indexintag]!=mytag){
-            valid[indexintag]= true;
-            tag[indexintag]=mytag;
-            targetpc[indexintag]= targetPc;
+        if (!valid[myindex] || tag[myindex]!=mytag){
+            valid[myindex]= true;
+            tag[myindex]=mytag;
+            targetpc[myindex]= targetPc;
             if (taken){
                 mystats.flush_num++;
                 if (globaltable[indexingt]<3){
@@ -122,7 +122,7 @@ public:
             if (globaltable[indexingt]>0)
                 globaltable[indexingt]--;
             history=(history*2)% histpower;
-            targetpc[indexintag]= targetPc;
+            targetpc[myindex]= targetPc;
             return;
         }
         if (pred_dst != targetPc )
@@ -130,7 +130,7 @@ public:
         if (globaltable[indexingt]<3)
             globaltable[indexingt]++;
         history=(history*2+1)% histpower;
-        targetpc[indexintag]= targetPc;
+        targetpc[myindex]= targetPc;
     }
 
     void  BP_GetStats(SIM_stats *curStats) override {
@@ -151,41 +151,41 @@ public:
     ~BTB_LT_GH() = default;
 
     bool  predict(uint32_t pc, uint32_t *dst) override {
-        uint32_t indexintag=(pc/4)%btbSize;
+        uint32_t myindex=(pc/4)%btbSize;
         uint32_t mytag=((pc/bitstotagpower)%tagpower);
-        if (tag[indexintag]!=mytag || !valid[indexintag]){
+        if (tag[myindex]!=mytag || !valid[myindex]){
             *dst=pc+4;
             return false;
         }
-        if (localtables[indexintag][history]<2){
+        if (localtables[myindex][history]<2){
             *dst=pc+4;
             return false;
         }
-        *dst=targetpc[indexintag];
+        *dst=targetpc[myindex];
         return true;
     }
 
     void  update(uint32_t pc, uint32_t targetPc, bool taken, uint32_t pred_dst) override {
-        uint32_t indexintag=(pc/4)%btbSize;
+        uint32_t myindex=(pc/4)%btbSize;
         uint32_t mytag=((pc/bitstotagpower)%tagpower);
         mystats.br_num++;
-        if (!valid[indexintag] || tag[indexintag]!=mytag){
+        if (!valid[myindex] || tag[myindex]!=mytag){
             for (int i = 0; i < histpower; ++i) {
-                localtables[indexintag][i]=fsmState;
+                localtables[myindex][i]=fsmState;
             }
-            valid[indexintag]= true;
-            tag[indexintag]=mytag;
-            targetpc[indexintag]= targetPc;
+            valid[myindex]= true;
+            tag[myindex]=mytag;
+            targetpc[myindex]= targetPc;
             if (taken){
                 mystats.flush_num++;
-                if (localtables[indexintag][history]<3){
-                    localtables[indexintag][history]++;
+                if (localtables[myindex][history]<3){
+                    localtables[myindex][history]++;
                 }
                 history=(history*2+1) % histpower;
             }
             else{
-                if (localtables[indexintag][history]>0){
-                    localtables[indexintag][history]--;
+                if (localtables[myindex][history]>0){
+                    localtables[myindex][history]--;
                 }
                 history=(history*2) % histpower;
             }
@@ -194,18 +194,18 @@ public:
         if (!taken){
             if (pred_dst != pc+4)
                 mystats.flush_num++;
-            if (localtables[indexintag][history]>0)
-                localtables[indexintag][history]--;
+            if (localtables[myindex][history]>0)
+                localtables[myindex][history]--;
             history=((history*2)% histpower);
-            targetpc[indexintag]= targetPc;
+            targetpc[myindex]= targetPc;
             return;
         }
         if (pred_dst != targetPc )
             mystats.flush_num++;
-        if (localtables[indexintag][history]<3)
-            localtables[indexintag][history]++;
+        if (localtables[myindex][history]<3)
+            localtables[myindex][history]++;
         history=((history*2+1)% histpower);
-        targetpc[indexintag]= targetPc;
+        targetpc[myindex]= targetPc;
     }
 
     void  BP_GetStats(SIM_stats *curStats) override{
@@ -239,10 +239,10 @@ public:
     }
 
     bool  predict(uint32_t pc, uint32_t *dst) override {
-        uint32_t indexintag=(pc/4)%btbSize;
+        uint32_t myindex=(pc/4)%btbSize;
         uint32_t mytag=((pc/bitstotagpower)%tagpower);
-        uint32_t indexingt = sharetype1(pc,shared,indexintag);
-        if (tag[indexintag]!=mytag || !valid[indexintag]){
+        uint32_t indexingt = sharetype1(pc,shared,myindex);
+        if (tag[myindex]!=mytag || !valid[myindex]){
             *dst=pc+4;
             return false;
         }
@@ -250,34 +250,34 @@ public:
             *dst=pc+4;
             return false;
         }
-        *dst=targetpc[indexintag];
+        *dst=targetpc[myindex];
         return true;
     }
 
     void  update(uint32_t pc, uint32_t targetPc, bool taken, uint32_t pred_dst) override {
-        uint32_t indexintag=(pc/4)%btbSize;
+        uint32_t myindex=(pc/4)%btbSize;
         uint32_t mytag=((pc/bitstotagpower)%tagpower);
         mystats.br_num++;
-        uint32_t indexingt = sharetype1(pc,shared,indexintag);
-        if (!valid[indexintag] || tag[indexintag] != mytag) {
-            historyvec[indexintag] = 0;
+        uint32_t indexingt = sharetype1(pc,shared,myindex);
+        if (!valid[myindex] || tag[myindex] != mytag) {
+            historyvec[myindex] = 0;
         }
-        if (!valid[indexintag] || tag[indexintag]!=mytag){
-            valid[indexintag]= true;
-            tag[indexintag]=mytag;
-            targetpc[indexintag]= targetPc;
+        if (!valid[myindex] || tag[myindex]!=mytag){
+            valid[myindex]= true;
+            tag[myindex]=mytag;
+            targetpc[myindex]= targetPc;
             if (taken){
                 mystats.flush_num++;
                 if (globaltable[indexingt]<3){
                     globaltable[indexingt]++;
                 }
-                historyvec[indexintag]=(historyvec[indexintag]*2+1) % histpower;
+                historyvec[myindex]=(historyvec[myindex]*2+1) % histpower;
             }
             else{
                 if (globaltable[indexingt]>0){
                     globaltable[indexingt]--;
                 }
-                historyvec[indexintag]=(historyvec[indexintag]*2) % histpower;
+                historyvec[myindex]=(historyvec[myindex]*2) % histpower;
             }
             return;
         }
@@ -286,16 +286,16 @@ public:
                 mystats.flush_num++;
             if (globaltable[indexingt]>0)
                 globaltable[indexingt]--;
-            historyvec[indexintag]=((historyvec[indexintag]*2)% histpower);
-            targetpc[indexintag]= targetPc;
+            historyvec[myindex]=((historyvec[myindex]*2)% histpower);
+            targetpc[myindex]= targetPc;
             return;
         }
         if (pred_dst != targetPc )
             mystats.flush_num++;
         if (globaltable[indexingt]<3)
             globaltable[indexingt]++;
-        historyvec[indexintag]=((historyvec[indexintag]*2+1)% histpower);
-        targetpc[indexintag]= targetPc;
+        historyvec[myindex]=((historyvec[myindex]*2+1)% histpower);
+        targetpc[myindex]= targetPc;
     }
 
     void BP_GetStats(SIM_stats *curStats) override {
@@ -316,62 +316,62 @@ public:
     ~BTB_LT_LH() = default;
 
     bool  predict(uint32_t pc, uint32_t *dst) override {
-        uint32_t indexintag=(pc/4)%btbSize;
+        uint32_t myindex=(pc/4)%btbSize;
         uint32_t mytag=((pc/bitstotagpower)%tagpower);
-        if (tag[indexintag]!=mytag || !valid[indexintag]){
+        if (tag[myindex]!=mytag || !valid[myindex]){
             *dst=pc+4;
             return false;
         }
-        if (localtables[indexintag][historyvec[indexintag]]<2){
+        if (localtables[myindex][historyvec[myindex]]<2){
             *dst=pc+4;
             return false;
         }
-        *dst=targetpc[indexintag];
+        *dst=targetpc[myindex];
         return true;
     }
 
     void  update(uint32_t pc, uint32_t targetPc, bool taken, uint32_t pred_dst) override {
-        uint32_t indexintag=(pc/4)%btbSize;
+        uint32_t myindex=(pc/4)%btbSize;
         uint32_t mytag=((pc/bitstotagpower)%tagpower);
         mystats.br_num++;
-        if (!valid[indexintag] || tag[indexintag]!=mytag){
-            historyvec[indexintag]=0;
+        if (!valid[myindex] || tag[myindex]!=mytag){
+            historyvec[myindex]=0;
             for (int i = 0; i < histpower; ++i) {
-                localtables[indexintag][i]=fsmState;
+                localtables[myindex][i]=fsmState;
             }
-            valid[indexintag]= true;
-            tag[indexintag]=mytag;
-            targetpc[indexintag]= targetPc;
+            valid[myindex]= true;
+            tag[myindex]=mytag;
+            targetpc[myindex]= targetPc;
             if (taken){
                 mystats.flush_num++;
-                if (localtables[indexintag][historyvec[indexintag]]<3){
-                    localtables[indexintag][historyvec[indexintag]]++;
+                if (localtables[myindex][historyvec[myindex]]<3){
+                    localtables[myindex][historyvec[myindex]]++;
                 }
-                historyvec[indexintag]=(historyvec[indexintag]*2+1) % histpower;
+                historyvec[myindex]=(historyvec[myindex]*2+1) % histpower;
             }
             else{
-                if (localtables[indexintag][historyvec[indexintag]]>0){
-                    localtables[indexintag][historyvec[indexintag]]--;
+                if (localtables[myindex][historyvec[myindex]]>0){
+                    localtables[myindex][historyvec[myindex]]--;
                 }
-                historyvec[indexintag]=(historyvec[indexintag]*2) % histpower;
+                historyvec[myindex]=(historyvec[myindex]*2) % histpower;
             }
             return;
         }
         if (!taken){
             if (pred_dst != pc+4)
                 mystats.flush_num++;
-            if (localtables[indexintag][historyvec[indexintag]]>0)
-                localtables[indexintag][historyvec[indexintag]]--;
-            historyvec[indexintag]=((historyvec[indexintag]*2)% histpower);
-            targetpc[indexintag]= targetPc;
+            if (localtables[myindex][historyvec[myindex]]>0)
+                localtables[myindex][historyvec[myindex]]--;
+            historyvec[myindex]=((historyvec[myindex]*2)% histpower);
+            targetpc[myindex]= targetPc;
             return;
         }
         if (pred_dst != targetPc )
             mystats.flush_num++;
-        if (localtables[indexintag][historyvec[indexintag]]<3)
-            localtables[indexintag][historyvec[indexintag]]++;
-        historyvec[indexintag]=((historyvec[indexintag]*2+1)% histpower);
-        targetpc[indexintag]= targetPc;
+        if (localtables[myindex][historyvec[myindex]]<3)
+            localtables[myindex][historyvec[myindex]]++;
+        historyvec[myindex]=((historyvec[myindex]*2+1)% histpower);
+        targetpc[myindex]= targetPc;
     }
 
     void BP_GetStats(SIM_stats *curStats) override {
@@ -411,8 +411,6 @@ void BP_update(uint32_t pc, uint32_t targetPc, bool taken, uint32_t pred_dst){
 }
 
 void BP_GetStats(SIM_stats *curStats){
-    mybtb->BP_GetStats(curStats);
-    delete mybtb;
-    return;
+    return mybtb->BP_GetStats(curStats);
 }
 
