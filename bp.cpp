@@ -196,7 +196,7 @@ public:
                 mystats.flush_num++;
             if (localtables[indexintag][history]>0)
                 localtables[indexintag][history]--;
-            history=(history*2)% histpower);
+            history=((history*2)% histpower);
             targetpc[indexintag]= targetPc;
             return;
         }
@@ -204,7 +204,7 @@ public:
             mystats.flush_num++;
         if (localtables[indexintag][history]<3)
             localtables[indexintag][history]++;
-        history=(history*2+1)% histpower);
+        history=((history*2+1)% histpower);
         targetpc[indexintag]= targetPc;
     }
 
