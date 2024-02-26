@@ -121,7 +121,7 @@ public:
                 mystats.flush_num++;
             if (globaltable[indexingt]>0)
                 globaltable[indexingt]--;
-            history=(history*2)% histpower);
+            history=(history*2)% histpower;
             targetpc[indexintag]= targetPc;
             return;
         }
@@ -129,7 +129,7 @@ public:
             mystats.flush_num++;
         if (globaltable[indexingt]<3)
             globaltable[indexingt]++;
-        history=(history*2+1)% histpower);
+        history=(history*2+1)% histpower;
         targetpc[indexintag]= targetPc;
     }
 
@@ -157,7 +157,7 @@ public:
             *dst=pc+4;
             return false;
         }
-        if (localtables[indexingt][history]<2){
+        if (localtables[indexintag][history]<2){
             *dst=pc+4;
             return false;
         }
@@ -178,14 +178,14 @@ public:
             targetpc[indexintag]= targetPc;
             if (taken){
                 mystats.flush_num++;
-                if (localtables[indexingt][history]<3){
-                    localtables[indexingt][history]++;
+                if (localtables[indexintag][history]<3){
+                    localtables[indexintag][history]++;
                 }
                 history=(history*2+1) % histpower;
             }
             else{
-                if (localtables[indexingt][history]>0){
-                    localtables[indexingt][history]--;
+                if (localtables[indexintag][history]>0){
+                    localtables[indexintag][history]--;
                 }
                 history=(history*2) % histpower;
             }
@@ -194,16 +194,16 @@ public:
         if (!taken){
             if (pred_dst != pc+4)
                 mystats.flush_num++;
-            if (localtables[indexingt][history]>0)
-                localtables[indexingt][history]--;
+            if (localtables[indexintag][history]>0)
+                localtables[indexintag][history]--;
             history=(history*2)% histpower);
             targetpc[indexintag]= targetPc;
             return;
         }
         if (pred_dst != targetPc )
             mystats.flush_num++;
-        if (localtables[indexingt][history]<3)
-            localtables[indexingt][history]++;
+        if (localtables[indexintag][history]<3)
+            localtables[indexintag][history]++;
         history=(history*2+1)% histpower);
         targetpc[indexintag]= targetPc;
     }
@@ -259,7 +259,7 @@ public:
         uint32_t mytag=((pc/bitstotagpower)%tagpower);
         mystats.br_num++;
         uint32_t indexingt = sharetype1(pc,shared,indexintag);
-        if (!valid[indexintag] || tag[indexintag] != tmp_tag) {
+        if (!valid[indexintag] || tag[indexintag] != mytag) {
             historyvec[indexintag] = 0;
         }
         if (!valid[indexintag] || tag[indexintag]!=mytag){
@@ -286,7 +286,7 @@ public:
                 mystats.flush_num++;
             if (globaltable[indexingt]>0)
                 globaltable[indexingt]--;
-            historyvec[indexintag]=(historyvec[indexintag]*2)% histpower);
+            historyvec[indexintag]=((historyvec[indexintag]*2)% histpower);
             targetpc[indexintag]= targetPc;
             return;
         }
@@ -294,7 +294,7 @@ public:
             mystats.flush_num++;
         if (globaltable[indexingt]<3)
             globaltable[indexingt]++;
-        historyvec[indexintag]=(historyvec[indexintag]*2+1)% histpower);
+        historyvec[indexintag]=((historyvec[indexintag]*2+1)% histpower);
         targetpc[indexintag]= targetPc;
     }
 
@@ -362,7 +362,7 @@ public:
                 mystats.flush_num++;
             if (localtables[indexintag][historyvec[indexintag]]>0)
                 localtables[indexintag][historyvec[indexintag]]--;
-            historyvec[indexintag]=(historyvec[indexintag]*2)% histpower);
+            historyvec[indexintag]=((historyvec[indexintag]*2)% histpower);
             targetpc[indexintag]= targetPc;
             return;
         }
@@ -370,7 +370,7 @@ public:
             mystats.flush_num++;
         if (localtables[indexintag][historyvec[indexintag]]<3)
             localtables[indexintag][historyvec[indexintag]]++;
-        historyvec[indexintag]=(historyvec[indexintag]*2+1)% histpower);
+        historyvec[indexintag]=((historyvec[indexintag]*2+1)% histpower);
         targetpc[indexintag]= targetPc;
     }
 
