@@ -73,7 +73,7 @@ public:
         uint32_t myindex=(pc/4)%btbSize;
         uint32_t mytag=((pc/bitstotagpower)%tagpower);
         uint32_t indexingt = sharetype(pc,shared,myindex);
-        if (tag[myindex]!=mytag || !valid[myindex] || globaltable[indexingt] < 2){
+        if ((globaltable[indexingt] < 2) || (tag[myindex]!=mytag) || !valid[myindex]){
             *dst=pc+4;
             return false;
         }
@@ -156,7 +156,7 @@ public:
         uint32_t myindex=(pc/4)%btbSize;
         uint32_t mytag=((pc/bitstotagpower)%tagpower);
         uint32_t indexingt = sharetype(pc,shared);
-        if (tag[myindex]!=mytag || !valid[myindex] || globaltable[indexingt]<2){
+        if ((globaltable[indexingt]<2) || (tag[myindex]!=mytag) || !valid[myindex]){
             *dst=pc+4;
             return false;
         }
@@ -213,76 +213,6 @@ public:
     }
 };
 
-class BTB_LT_GH : public BTB {
-public:
-    std::vector<std::vector<unsigned >> localtables;
-    int history;
-    BTB_LT_GH(unsigned btbSize, unsigned historySize, unsigned tagSize, unsigned fsmState) :
-    BTB(btbSize, historySize, tagSize, fsmState), localtables(btbSize, std::vector<unsigned>(histpower, fsmState)),history(0) {}
-    ~BTB_LT_GH() = default;
-
-    bool  predict(uint32_t pc, uint32_t *dst) override {
-        uint32_t myindex=(pc/4)%btbSize;
-        uint32_t mytag=((pc/bitstotagpower)%tagpower);
-        if (tag[myindex]!=mytag || !valid[myindex] || localtables[myindex][history]<2){
-            *dst=pc+4;
-            return false;
-        }
-        *dst=targetpc[myindex];
-        return true;
-    }
-
-    void updatetableup(uint32_t myindex) {
-        if (localtables[myindex][history]<3)
-            localtables[myindex][history]++;
-        history=((history*2+1)% histpower);
-    }
-    void updatetabledown(uint32_t myindex){
-        if (localtables[myindex][history]>0)
-            localtables[myindex][history]--;
-        history=((history*2)% histpower);
-    }
-
-    void  update(uint32_t pc, uint32_t targetPc, bool taken, uint32_t pred_dst) override {
-        uint32_t myindex=(pc/4)%btbSize;
-        uint32_t mytag=((pc/bitstotagpower)%tagpower);
-        mystats.br_num++;
-        if (!valid[myindex] || tag[myindex]!=mytag){
-            for (int i = 0; i < histpower; ++i) {
-                localtables[myindex][i]=fsmState;
-            }
-            valid[myindex]= true;
-            tag[myindex]=mytag;
-            targetpc[myindex]= targetPc;
-            if (!taken)
-                updatetabledown(myindex);
-            else{
-                mystats.flush_num++;
-                updatetableup(myindex);
-            }
-            return;
-        }
-        if (taken){
-            updatetableup(myindex);
-            targetpc[myindex]= targetPc;
-            if (pred_dst != targetPc )
-                mystats.flush_num++;
-            return;
-        }
-        updatetabledown(myindex);
-        targetpc[myindex]= targetPc;
-        if (pred_dst != pc+4)
-            mystats.flush_num++;
-        return;
-    }
-
-    void  BP_GetStats(SIM_stats *curStats) override{
-        curStats->flush_num = mystats.flush_num;
-        curStats->br_num = mystats.br_num;
-        curStats->size = historySize+(btbSize*(1+tagSize+30+2*histpower));
-    }
-};
-
 class BTB_LT_LH : public BTB {
 public:
     std::vector<std::vector<unsigned >> localtables;
@@ -294,7 +224,7 @@ public:
     bool  predict(uint32_t pc, uint32_t *dst) override {
         uint32_t myindex=(pc/4)%btbSize;
         uint32_t mytag=((pc/bitstotagpower)%tagpower);
-        if (tag[myindex]!=mytag || !valid[myindex] || localtables[myindex][historyvec[myindex]]<2){
+        if ((localtables[myindex][historyvec[myindex]]<2) || (tag[myindex]!=mytag) || !valid[myindex]){
             *dst=pc+4;
             return false;
         }
@@ -354,20 +284,90 @@ public:
     }
 };
 
+class BTB_LT_GH : public BTB {
+public:
+    std::vector<std::vector<unsigned >> localtables;
+    int history;
+    BTB_LT_GH(unsigned btbSize, unsigned historySize, unsigned tagSize, unsigned fsmState) :
+            BTB(btbSize, historySize, tagSize, fsmState), localtables(btbSize, std::vector<unsigned>(histpower, fsmState)),history(0) {}
+    ~BTB_LT_GH() = default;
+
+    bool  predict(uint32_t pc, uint32_t *dst) override {
+        uint32_t myindex=(pc/4)%btbSize;
+        uint32_t mytag=((pc/bitstotagpower)%tagpower);
+        if ((localtables[myindex][history]<2) || (tag[myindex]!=mytag) || !valid[myindex]){
+            *dst=pc+4;
+            return false;
+        }
+        *dst=targetpc[myindex];
+        return true;
+    }
+
+    void updatetableup(uint32_t myindex) {
+        if (localtables[myindex][history]<3)
+            localtables[myindex][history]++;
+        history=((history*2+1)% histpower);
+    }
+    void updatetabledown(uint32_t myindex){
+        if (localtables[myindex][history]>0)
+            localtables[myindex][history]--;
+        history=((history*2)% histpower);
+    }
+
+    void  update(uint32_t pc, uint32_t targetPc, bool taken, uint32_t pred_dst) override {
+        uint32_t myindex=(pc/4)%btbSize;
+        uint32_t mytag=((pc/bitstotagpower)%tagpower);
+        mystats.br_num++;
+        if (!valid[myindex] || tag[myindex]!=mytag){
+            for (int i = 0; i < histpower; ++i) {
+                localtables[myindex][i]=fsmState;
+            }
+            valid[myindex]= true;
+            tag[myindex]=mytag;
+            targetpc[myindex]= targetPc;
+            if (!taken)
+                updatetabledown(myindex);
+            else{
+                mystats.flush_num++;
+                updatetableup(myindex);
+            }
+            return;
+        }
+        if (taken){
+            updatetableup(myindex);
+            targetpc[myindex]= targetPc;
+            if (pred_dst != targetPc )
+                mystats.flush_num++;
+            return;
+        }
+        updatetabledown(myindex);
+        targetpc[myindex]= targetPc;
+        if (pred_dst != pc+4)
+            mystats.flush_num++;
+        return;
+    }
+
+    void  BP_GetStats(SIM_stats *curStats) override{
+        curStats->flush_num = mystats.flush_num;
+        curStats->br_num = mystats.br_num;
+        curStats->size = historySize+(btbSize*(1+tagSize+30+2*histpower));
+    }
+};
+
 BTB *mybtb;
 int BP_init(unsigned btbSize, unsigned historySize, unsigned tagSize, unsigned fsmState,
 			bool isGlobalHist, bool isGlobalTable, int Shared){
-    if(isGlobalHist && isGlobalTable){
-        mybtb = new BTB_GT_GH(btbSize,historySize,tagSize,fsmState, Shared);
-    }
-    else if(isGlobalHist && !isGlobalTable){
-        mybtb = new BTB_LT_GH(btbSize,historySize,tagSize,fsmState);
-    }
-    else if(!isGlobalHist && isGlobalTable){
+    if(!isGlobalHist && isGlobalTable){
         mybtb = new BTB_GT_LH(btbSize,historySize,tagSize,fsmState, Shared);
+    }
+    else if(isGlobalHist && isGlobalTable){
+        mybtb = new BTB_GT_GH(btbSize,historySize,tagSize,fsmState, Shared);
     }
     else if(!isGlobalHist && !isGlobalTable){
         mybtb = new BTB_LT_LH(btbSize,historySize,tagSize,fsmState);
+    }
+    else if(isGlobalHist && !isGlobalTable){
+        mybtb = new BTB_LT_GH(btbSize,historySize,tagSize,fsmState);
     }
     if(mybtb){
         return 0;
