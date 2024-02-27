@@ -62,17 +62,17 @@ public:
     BTB(btbSize, historySize, tagSize, fsmState),globaltable(histpower,fsmState),shared(isShare),historyvec(btbSize,0){}
 
     ~BTB_GT_LH() =default;
-    /*
-    uint32_t  sharetype1(uint32_t pc1, int shared,uint32_t myindex){
+    
+    uint32_t  sharetype(uint32_t pc, int shared,uint32_t myindex){
         if (shared==0){
             return historyvec[myindex];
         }
         if (shared==1){
-            return ((historyvec[myindex] ^ (pc1/4))%histpower);
+            return ((historyvec[myindex] ^ (pc/4))%histpower);
         }
-        return ((historyvec[myindex] ^ (pc1/ power2tox(16)))%histpower);
+        return ((historyvec[myindex] ^ (pc/ power2tox(16)))%histpower);
     }
-    */
+    
     bool  predict(uint32_t pc, uint32_t *dst) override {
         uint32_t myindex=(pc/4)%btbSize;
         uint32_t mytag=((pc/bitstotagpower)%tagpower);
@@ -80,20 +80,7 @@ public:
             *dst=pc+4;
             return false;
         }
-        uint32_t indexingt ;
-        if (shared==0){
-            indexingt = historyvec[myindex];
-        }
-        if (shared==1){
-            indexingt = ((historyvec[myindex] ^ (pc/4))%histpower);
-        }
-        if(shared==2){
-            indexingt = ((historyvec[myindex] ^ (pc/ power2tox(16)))%histpower);
-        }
-        if (globaltable[indexingt]<2){
-            *dst=pc+4;
-            return false;
-        }
+        uint32_t indexingt = sharetype(pc,shared,myindex);
         *dst=targetpc[myindex];
         return true;
     }
@@ -102,20 +89,10 @@ public:
         uint32_t myindex=(pc/4)%btbSize;
         uint32_t mytag=((pc/bitstotagpower)%tagpower);
         mystats.br_num++;
-        //uint32_t indexingt = sharetype1(pc,shared,myindex);
         if (!valid[myindex] || tag[myindex] != mytag) {
             historyvec[myindex] = 0;
         }
-        uint32_t indexingt ;
-        if (shared==0){
-            indexingt = historyvec[myindex];
-        }
-        if (shared==1){
-            indexingt = ((historyvec[myindex] ^ (pc/4))%histpower);
-        }
-        if(shared==2){
-            indexingt = ((historyvec[myindex] ^ (pc/ power2tox(16)))%histpower);
-        }
+        uint32_t indexingt = sharetype(pc,shared,myindex);
         if (!valid[myindex] || tag[myindex]!=mytag){
             valid[myindex]= true;
             tag[myindex]=mytag;
