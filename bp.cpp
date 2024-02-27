@@ -62,7 +62,7 @@ public:
     BTB(btbSize, historySize, tagSize, fsmState),globaltable(histpower,fsmState),shared(isShare),historyvec(btbSize,0){}
 
     ~BTB_GT_LH() =default;
-
+    /*
     uint32_t  sharetype1(uint32_t pc1, int shared,uint32_t myindex){
         if (shared==0){
             return historyvec[myindex];
@@ -72,14 +72,23 @@ public:
         }
         return ((historyvec[myindex] ^ (pc1/ power2tox(16)))%histpower);
     }
-
+    */
     bool  predict(uint32_t pc, uint32_t *dst) override {
         uint32_t myindex=(pc/4)%btbSize;
         uint32_t mytag=((pc/bitstotagpower)%tagpower);
-        uint32_t indexingt = sharetype1(pc,shared,myindex);
         if (tag[myindex]!=mytag || !valid[myindex]){
             *dst=pc+4;
             return false;
+        }
+        uint32_t indexingt ;
+        if (shared==0){
+            indexingt = historyvec[myindex];
+        }
+        if (shared==1){
+            indexingt = ((historyvec[myindex] ^ (pc1/4))%histpower);
+        }
+        if(shared==2){
+            indexingt = ((historyvec[myindex] ^ (pc1/ power2tox(16)))%histpower);
         }
         if (globaltable[indexingt]<2){
             *dst=pc+4;
