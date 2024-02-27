@@ -72,13 +72,9 @@ public:
     bool  predict(uint32_t pc, uint32_t *dst) override {
         uint32_t myindex=(pc/4)%btbSize;
         uint32_t mytag=((pc/bitstotagpower)%tagpower);
-        if (tag[myindex]!=mytag || !valid[myindex]){
-            *dst=pc+4;
-            return false;
-        }
         uint32_t indexingt = sharetype(pc,shared,myindex);
-        if (globaltable[indexingt] < 2) {
-            *dst = pc + 4;
+        if (tag[myindex]!=mytag || !valid[myindex] || globaltable[indexingt] < 2){
+            *dst=pc+4;
             return false;
         }
         *dst=targetpc[myindex];
@@ -160,11 +156,7 @@ public:
         uint32_t myindex=(pc/4)%btbSize;
         uint32_t mytag=((pc/bitstotagpower)%tagpower);
         uint32_t indexingt = sharetype(pc,shared);
-        if (tag[myindex]!=mytag || !valid[myindex]){
-            *dst=pc+4;
-            return false;
-        }
-        if (globaltable[indexingt]<2){
+        if (tag[myindex]!=mytag || !valid[myindex] || globaltable[indexingt]<2){
             *dst=pc+4;
             return false;
         }
@@ -232,11 +224,7 @@ public:
     bool  predict(uint32_t pc, uint32_t *dst) override {
         uint32_t myindex=(pc/4)%btbSize;
         uint32_t mytag=((pc/bitstotagpower)%tagpower);
-        if (tag[myindex]!=mytag || !valid[myindex]){
-            *dst=pc+4;
-            return false;
-        }
-        if (localtables[myindex][history]<2){
+        if (tag[myindex]!=mytag || !valid[myindex] || localtables[myindex][history]<2){
             *dst=pc+4;
             return false;
         }
@@ -306,11 +294,7 @@ public:
     bool  predict(uint32_t pc, uint32_t *dst) override {
         uint32_t myindex=(pc/4)%btbSize;
         uint32_t mytag=((pc/bitstotagpower)%tagpower);
-        if (tag[myindex]!=mytag || !valid[myindex]){
-            *dst=pc+4;
-            return false;
-        }
-        if (localtables[myindex][historyvec[myindex]]<2){
+        if (tag[myindex]!=mytag || !valid[myindex] || localtables[myindex][historyvec[myindex]]<2){
             *dst=pc+4;
             return false;
         }
