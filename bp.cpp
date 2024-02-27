@@ -1,6 +1,5 @@
 /* 046267 Computer Architecture - HW #1                                 */
 /* This file should hold your implementation of the predictor simulator */
-
 #include "bp_api.h"
 #include <vector>
 
@@ -36,7 +35,6 @@ public:
     int bitstotagpower;
     int tagpower;
     int histpower;
-
     BTB(unsigned btbsize, unsigned historysize, unsigned tagsize, unsigned fsmstate):btbSize(btbsize),
         historySize(historysize), tagSize(tagsize), fsmState(fsmstate),targetpc(btbsize, 0),
         tag(btbsize, 0), valid(btbsize, false){
@@ -60,7 +58,6 @@ public:
     std::vector<int> historyvec;
     BTB_GT_LH(unsigned btbSize, unsigned historySize, unsigned tagSize, unsigned fsmState,int isShare) :
     BTB(btbSize, historySize, tagSize, fsmState),globaltable(histpower,fsmState),shared(isShare),historyvec(btbSize,0){}
-
     ~BTB_GT_LH() =default;
 
     uint32_t  sharetype(uint32_t pc, int shared,uint32_t myindex){
@@ -88,6 +85,17 @@ public:
         *dst=targetpc[myindex];
         return true;
     }
+    
+    void updatetableup(uint32_t indexingt, uint32_t myindex){
+        if (globaltable[indexingt]<3)
+            globaltable[indexingt]++;
+        historyvec[myindex]=((historyvec[myindex]*2+1)%histpower);
+    }
+    void updatetabledown(uint32_t indexingt, uint32_t myindex){
+        if (globaltable[indexingt]>0)
+            globaltable[indexingt]--;
+        historyvec[myindex]=((historyvec[myindex]*2)%histpower);
+    }
 
     void  update(uint32_t pc, uint32_t targetPc, bool taken, uint32_t pred_dst) override {
         uint32_t myindex=(pc/4)%btbSize;
@@ -103,33 +111,23 @@ public:
             targetpc[myindex]= targetPc;
             if (taken){
                 mystats.flush_num++;
-                if (globaltable[indexingt]<3){
-                    globaltable[indexingt]++;
-                }
-                historyvec[myindex]=(historyvec[myindex]*2+1) % histpower;
+                updatetableup(indexingt,myindex);
             }
             else{
-                if (globaltable[indexingt]>0){
-                    globaltable[indexingt]--;
-                }
-                historyvec[myindex]=(historyvec[myindex]*2) % histpower;
+                updatetabledown(indexingt,myindex);
             }
             return;
         }
         if (!taken){
             if (pred_dst != pc+4)
                 mystats.flush_num++;
-            if (globaltable[indexingt]>0)
-                globaltable[indexingt]--;
-            historyvec[myindex]=((historyvec[myindex]*2)% histpower);
+            updatetabledown(indexingt,myindex);
             targetpc[myindex]= targetPc;
             return;
         }
         if (pred_dst != targetPc )
             mystats.flush_num++;
-        if (globaltable[indexingt]<3)
-            globaltable[indexingt]++;
-        historyvec[myindex]=((historyvec[myindex]*2+1)% histpower);
+        updatetableup(indexingt,myindex);
         targetpc[myindex]= targetPc;
     }
 
@@ -145,10 +143,8 @@ public:
     std::vector<unsigned> globaltable;
     int shared;
     int history;
-
     BTB_GT_GH(unsigned btbSize, unsigned historySize, unsigned tagSize, unsigned fsmState, int isShare) :
     BTB(btbSize, historySize, tagSize, fsmState),globaltable(histpower,fsmState), shared(isShare), history(0) {}
-
     ~BTB_GT_GH() = default;
 
     uint32_t  sharetype(uint32_t pc1, int shared){
@@ -176,6 +172,17 @@ public:
         *dst=targetpc[myindex];
         return true;
     }
+    
+    void updatetableup(uint32_t indexingt){
+        if (globaltable[indexingt]<3)
+            globaltable[indexingt]++;
+        history=((history*2+1)%histpower);
+    }
+    void updatetabledown(uint32_t indexingt){
+        if (globaltable[indexingt]>0)
+            globaltable[indexingt]--;
+        history=((history*2)%histpower);
+    }
 
     void  update(uint32_t pc, uint32_t targetPc, bool taken, uint32_t pred_dst) override {
         uint32_t myindex=(pc/4)%btbSize;
@@ -188,33 +195,23 @@ public:
             targetpc[myindex]= targetPc;
             if (taken){
                 mystats.flush_num++;
-                if (globaltable[indexingt]<3){
-                    globaltable[indexingt]++;
-                }
-                history=(history*2+1) % histpower;
+                updatetableup(indexingt);
             }
             else{
-                if (globaltable[indexingt]>0){
-                    globaltable[indexingt]--;
-                }
-                history=(history*2) % histpower;
+                updatetabledown(indexingt);
             }
             return;
         }
         if (!taken){
             if (pred_dst != pc+4)
                 mystats.flush_num++;
-            if (globaltable[indexingt]>0)
-                globaltable[indexingt]--;
-            history=(history*2)% histpower;
+            updatetabledown(indexingt);
             targetpc[myindex]= targetPc;
             return;
         }
         if (pred_dst != targetPc )
             mystats.flush_num++;
-        if (globaltable[indexingt]<3)
-            globaltable[indexingt]++;
-        history=(history*2+1)% histpower;
+        updatetableup(indexingt);
         targetpc[myindex]= targetPc;
     }
 
@@ -229,10 +226,8 @@ class BTB_LT_GH : public BTB {
 public:
     std::vector<std::vector<unsigned >> localtables;
     int history;
-
     BTB_LT_GH(unsigned btbSize, unsigned historySize, unsigned tagSize, unsigned fsmState) :
     BTB(btbSize, historySize, tagSize, fsmState), localtables(btbSize, std::vector<unsigned>(histpower, fsmState)),history(0) {}
-
     ~BTB_LT_GH() = default;
 
     bool  predict(uint32_t pc, uint32_t *dst) override {
@@ -249,6 +244,17 @@ public:
         *dst=targetpc[myindex];
         return true;
     }
+    
+    void updatetableup(uint32_t myindex) {
+        if (localtables[myindex][history]<3)
+            localtables[myindex][history]++;
+        history=((history*2+1)% histpower);
+    }
+    void updatetabledown(uint32_t myindex){
+        if (localtables[myindex][history]>0)
+            localtables[myindex][history]--;
+        history=((history*2)% histpower);
+    }
 
     void  update(uint32_t pc, uint32_t targetPc, bool taken, uint32_t pred_dst) override {
         uint32_t myindex=(pc/4)%btbSize;
@@ -263,33 +269,23 @@ public:
             targetpc[myindex]= targetPc;
             if (taken){
                 mystats.flush_num++;
-                if (localtables[myindex][history]<3){
-                    localtables[myindex][history]++;
-                }
-                history=(history*2+1) % histpower;
+                updatetableup(myindex);
             }
             else{
-                if (localtables[myindex][history]>0){
-                    localtables[myindex][history]--;
-                }
-                history=(history*2) % histpower;
+                updatetabledown(myindex);
             }
             return;
         }
         if (!taken){
             if (pred_dst != pc+4)
                 mystats.flush_num++;
-            if (localtables[myindex][history]>0)
-                localtables[myindex][history]--;
-            history=((history*2)% histpower);
+            updatetabledown(myindex);
             targetpc[myindex]= targetPc;
             return;
         }
         if (pred_dst != targetPc )
             mystats.flush_num++;
-        if (localtables[myindex][history]<3)
-            localtables[myindex][history]++;
-        history=((history*2+1)% histpower);
+        updatetableup(myindex);
         targetpc[myindex]= targetPc;
     }
 
@@ -304,10 +300,8 @@ class BTB_LT_LH : public BTB {
 public:
     std::vector<std::vector<unsigned >> localtables;
     std::vector<int> historyvec;
-
     BTB_LT_LH(unsigned btbSize, unsigned historySize, unsigned tagSize, unsigned fsmState) :
     BTB(btbSize, historySize, tagSize, fsmState), localtables(btbSize, std::vector<unsigned>(histpower, fsmState)),historyvec(btbSize,0) {}
-
     ~BTB_LT_LH() = default;
 
     bool  predict(uint32_t pc, uint32_t *dst) override {
@@ -324,6 +318,17 @@ public:
         *dst=targetpc[myindex];
         return true;
     }
+    
+    void updatetableup(uint32_t myindex){
+        if (localtables[myindex][historyvec[myindex]]<3)
+            localtables[myindex][historyvec[myindex]]++;
+        historyvec[myindex]=(historyvec[myindex]*2+1) % histpower;
+    }
+    void updatetabledown(uint32_t myindex){
+        if (localtables[myindex][historyvec[myindex]]>0)
+            localtables[myindex][historyvec[myindex]]--;
+        historyvec[myindex]=((historyvec[myindex]*2) % histpower);
+    }
 
     void  update(uint32_t pc, uint32_t targetPc, bool taken, uint32_t pred_dst) override {
         uint32_t myindex=(pc/4)%btbSize;
@@ -339,33 +344,23 @@ public:
             targetpc[myindex]= targetPc;
             if (taken){
                 mystats.flush_num++;
-                if (localtables[myindex][historyvec[myindex]]<3){
-                    localtables[myindex][historyvec[myindex]]++;
-                }
-                historyvec[myindex]=(historyvec[myindex]*2+1) % histpower;
+                updatetableup(myindex);
             }
-            else{
-                if (localtables[myindex][historyvec[myindex]]>0){
-                    localtables[myindex][historyvec[myindex]]--;
-                }
-                historyvec[myindex]=(historyvec[myindex]*2) % histpower;
+            else {
+                updatetabledown(myindex);
             }
             return;
         }
         if (!taken){
             if (pred_dst != pc+4)
                 mystats.flush_num++;
-            if (localtables[myindex][historyvec[myindex]]>0)
-                localtables[myindex][historyvec[myindex]]--;
-            historyvec[myindex]=((historyvec[myindex]*2)% histpower);
+            updatetabledown(myindex);           
             targetpc[myindex]= targetPc;
             return;
         }
         if (pred_dst != targetPc )
             mystats.flush_num++;
-        if (localtables[myindex][historyvec[myindex]]<3)
-            localtables[myindex][historyvec[myindex]]++;
-        historyvec[myindex]=((historyvec[myindex]*2+1)% histpower);
+        updatetableup(myindex);
         targetpc[myindex]= targetPc;
     }
 
@@ -408,4 +403,3 @@ void BP_update(uint32_t pc, uint32_t targetPc, bool taken, uint32_t pred_dst){
 void BP_GetStats(SIM_stats *curStats){
     return mybtb->BP_GetStats(curStats);
 }
-
