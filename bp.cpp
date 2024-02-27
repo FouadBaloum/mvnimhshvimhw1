@@ -116,17 +116,18 @@ public:
             }
             return;
         }
-        if (!taken){
-            updatetabledown(indexingt,myindex);
+        if (taken){
+            updatetableup(indexingt,myindex);
             targetpc[myindex]= targetPc;
-            if (pred_dst != pc+4)
+            if (pred_dst != targetPc )
                 mystats.flush_num++;
             return;
         }
-        updatetableup(indexingt,myindex);
+        updatetabledown(indexingt,myindex);
         targetpc[myindex]= targetPc;
-        if (pred_dst != targetPc )
+        if (pred_dst != pc+4)
             mystats.flush_num++;
+        return;
     }
 
     void BP_GetStats(SIM_stats *curStats) override {
@@ -199,17 +200,18 @@ public:
             }
             return;
         }
-        if (!taken){
-            updatetabledown(indexingt);
+        if (taken){
+            updatetableup(indexingt);
             targetpc[myindex]= targetPc;
-            if (pred_dst != pc+4)
+            if (pred_dst != targetPc)
                 mystats.flush_num++;
             return;
         }
-        updatetableup(indexingt);
+        updatetabledown(indexingt);
         targetpc[myindex]= targetPc;
-        if (pred_dst != targetPc)
+        if (pred_dst != pc+4)
             mystats.flush_num++;
+        return;
     }
 
     void  BP_GetStats(SIM_stats *curStats) override {
@@ -272,17 +274,18 @@ public:
             }
             return;
         }
-        if (!taken){
-            updatetabledown(myindex);
+        if (taken){
+            updatetableup(myindex);
             targetpc[myindex]= targetPc;
-            if (pred_dst != pc+4)
+            if (pred_dst != targetPc )
                 mystats.flush_num++;
             return;
         }
-        updatetableup(myindex);
+        updatetabledown(myindex);
         targetpc[myindex]= targetPc;
-        if (pred_dst != targetPc )
+        if (pred_dst != pc+4)
             mystats.flush_num++;
+        return;
     }
 
     void  BP_GetStats(SIM_stats *curStats) override{
@@ -346,17 +349,18 @@ public:
             }
             return;
         }
-        if (!taken){
-            updatetabledown(myindex);
+        if (taken){
+            updatetableup(myindex);
             targetpc[myindex]= targetPc;
-            if (pred_dst != pc+4)
+            if (pred_dst != targetPc )
                 mystats.flush_num++;
             return;
         }
-        updatetableup(myindex);
+        updatetabledown(myindex);
         targetpc[myindex]= targetPc;
-        if (pred_dst != targetPc )
+        if (pred_dst != pc+4)
             mystats.flush_num++;
+        return;
     }
 
     void BP_GetStats(SIM_stats *curStats) override {
