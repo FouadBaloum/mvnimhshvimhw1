@@ -85,10 +85,10 @@ public:
             indexingt = historyvec[myindex];
         }
         if (shared==1){
-            indexingt = ((historyvec[myindex] ^ (pc1/4))%histpower);
+            indexingt = ((historyvec[myindex] ^ (pc/4))%histpower);
         }
         if(shared==2){
-            indexingt = ((historyvec[myindex] ^ (pc1/ power2tox(16)))%histpower);
+            indexingt = ((historyvec[myindex] ^ (pc/ power2tox(16)))%histpower);
         }
         if (globaltable[indexingt]<2){
             *dst=pc+4;
@@ -102,9 +102,19 @@ public:
         uint32_t myindex=(pc/4)%btbSize;
         uint32_t mytag=((pc/bitstotagpower)%tagpower);
         mystats.br_num++;
-        uint32_t indexingt = sharetype1(pc,shared,myindex);
+        //uint32_t indexingt = sharetype1(pc,shared,myindex);
         if (!valid[myindex] || tag[myindex] != mytag) {
             historyvec[myindex] = 0;
+        }
+        uint32_t indexingt ;
+        if (shared==0){
+            indexingt = historyvec[myindex];
+        }
+        if (shared==1){
+            indexingt = ((historyvec[myindex] ^ (pc/4))%histpower);
+        }
+        if(shared==2){
+            indexingt = ((historyvec[myindex] ^ (pc/ power2tox(16)))%histpower);
         }
         if (!valid[myindex] || tag[myindex]!=mytag){
             valid[myindex]= true;
