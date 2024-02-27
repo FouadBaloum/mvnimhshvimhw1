@@ -10,7 +10,6 @@ int power2tox( int x){
     }
     return res;
 }
-
 int log2tox(int x){
     int res=0;
     while (x > 1) {
@@ -26,9 +25,9 @@ public:
     unsigned historySize;
     unsigned tagSize;
     unsigned fsmState;
+    std::vector<bool> valid;
     std::vector<uint32_t> targetpc;
     std::vector<uint32_t> tag;
-    std::vector<bool> valid;
     int bits_for_btb;
     int bitstotag;
     SIM_stats mystats;
@@ -36,8 +35,8 @@ public:
     int tagpower;
     int histpower;
     BTB(unsigned btbsize, unsigned historysize, unsigned tagsize, unsigned fsmstate):btbSize(btbsize),
-        historySize(historysize), tagSize(tagsize), fsmState(fsmstate),targetpc(btbsize, 0),
-        tag(btbsize, 0), valid(btbsize, false){
+        historySize(historysize), tagSize(tagsize), fsmState(fsmstate), valid(btbsize, false),targetpc(btbsize, 0),
+        tag(btbsize, 0){
         bits_for_btb = log2tox(btbsize);
         bitstotag = 2+bits_for_btb;
         bitstotagpower = power2tox(bitstotag);
@@ -85,7 +84,7 @@ public:
         *dst=targetpc[myindex];
         return true;
     }
-    
+
     void updatetableup(uint32_t indexingt, uint32_t myindex){
         if (globaltable[indexingt]<3)
             globaltable[indexingt]++;
@@ -107,28 +106,28 @@ public:
         uint32_t indexingt = sharetype(pc,shared,myindex);
         if (!valid[myindex] || tag[myindex]!=mytag){
             valid[myindex]= true;
-            tag[myindex]=mytag;
             targetpc[myindex]= targetPc;
-            if (taken){
-                mystats.flush_num++;
-                updatetableup(indexingt,myindex);
+            tag[myindex]=mytag;
+            if (!taken){
+                updatetabledown(indexingt,myindex);
             }
             else{
-                updatetabledown(indexingt,myindex);
+                mystats.flush_num++;
+                updatetableup(indexingt,myindex);
             }
             return;
         }
         if (!taken){
-            if (pred_dst != pc+4)
-                mystats.flush_num++;
             updatetabledown(indexingt,myindex);
             targetpc[myindex]= targetPc;
+            if (pred_dst != pc+4)
+                mystats.flush_num++;
             return;
         }
-        if (pred_dst != targetPc )
-            mystats.flush_num++;
         updatetableup(indexingt,myindex);
         targetpc[myindex]= targetPc;
+        if (pred_dst != targetPc )
+            mystats.flush_num++;
     }
 
     void BP_GetStats(SIM_stats *curStats) override {
@@ -172,7 +171,7 @@ public:
         *dst=targetpc[myindex];
         return true;
     }
-    
+
     void updatetableup(uint32_t indexingt){
         if (globaltable[indexingt]<3)
             globaltable[indexingt]++;
@@ -244,7 +243,7 @@ public:
         *dst=targetpc[myindex];
         return true;
     }
-    
+
     void updatetableup(uint32_t myindex) {
         if (localtables[myindex][history]<3)
             localtables[myindex][history]++;
@@ -318,7 +317,7 @@ public:
         *dst=targetpc[myindex];
         return true;
     }
-    
+
     void updatetableup(uint32_t myindex){
         if (localtables[myindex][historyvec[myindex]]<3)
             localtables[myindex][historyvec[myindex]]++;
@@ -354,7 +353,7 @@ public:
         if (!taken){
             if (pred_dst != pc+4)
                 mystats.flush_num++;
-            updatetabledown(myindex);           
+            updatetabledown(myindex);
             targetpc[myindex]= targetPc;
             return;
         }
